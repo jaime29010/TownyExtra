@@ -1,0 +1,5 @@
+name: TownyExtra
+version: ${project.version}
+main: me.jaimemartz.townyextra.TownyExtra
+depend: [Towny, ProtocolLib]
+authors: [MrJaime]
