@@ -68,4 +68,12 @@ public class TownyUtils {
             return null;
         }
     }
+
+    public static Nation getNation(Town town) {
+        try {
+            return town.getNation();
+        } catch (NotRegisteredException e) {
+            e.printStackTrace();
+        }
+    }
 }
