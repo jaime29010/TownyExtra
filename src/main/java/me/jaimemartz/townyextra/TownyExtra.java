@@ -20,14 +20,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 public final class TownyExtra extends JavaPlugin implements Listener {
+    private TownManager manager;
 
     @Override
     public void onEnable() {
+        manager = new TownManager(this);
         getServer().getPluginManager().registerEvents(this, this);
     }
 
     @Override
     public void onDisable() {
         //Nothing to do? I guess?
+    }
+
+    public TownManager getTownManager() {
+        return manager;
     }
 }

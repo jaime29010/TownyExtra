@@ -73,7 +73,7 @@ public class TownyUtils {
         try {
             return town.getNation();
         } catch (NotRegisteredException e) {
-            e.printStackTrace();
+            return null;
         }
     }
 }

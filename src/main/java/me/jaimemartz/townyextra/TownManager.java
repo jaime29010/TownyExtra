@@ -1,9 +1,10 @@
 package me.jaimemartz.townyextra;
 
+import com.palmergames.bukkit.towny.event.TownAddResidentEvent;
+import com.palmergames.bukkit.towny.event.TownRemoveResidentEvent;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
-import com.palmergames.bukkit.towny.object.TownyUniverse;
 import me.jaimemartz.townyextra.utils.TownyUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -29,7 +30,7 @@ public final class TownManager {
         plugin.getServer().getPluginManager().registerEvents(new TownListener(), plugin);
     }
 
-    public void setupBoard(Town town) {
+    public Scoreboard setupBoard(Town town) {
         Scoreboard board = manager.getNewScoreboard();
 
         Team nationMayors = board.registerNewTeam("nation_mayors");
@@ -56,34 +57,36 @@ public final class TownManager {
         Team unknown = board.registerNewTeam("unknown");
         unknown.setPrefix(ChatColor.GRAY + ChatColor.ITALIC.toString());
 
-        //todo do this on join
-        TownyUniverse.getOnlinePlayers(town).forEach(player -> player.setScoreboard(board));
         boards.put(town, board);
+        return board;
     }
 
     public void updateBoard(Resident resident) {
         boards.keySet().forEach(other -> {
-            //Update of player
+            plugin.getLogger().info(resident.getName());
+
+            Town town = TownyUtils.getTown(resident);
+            if (town == other) {
+                plugin.getServer().getOnlinePlayers().forEach(player -> {
+                    Resident res = TownyUtils.getResident(player);
+                    if (res != null) {
+                        Team team = assignTeam(res, town);
+                        team.addEntry(res.getName());
+                    }
+                });
+            }
+
             Team team = assignTeam(resident, other);
             team.addEntry(resident.getName());
         });
 
     }
 
-    public void clearBoard(Town town) {
-        TownyUniverse.getOnlinePlayers(town).forEach(player -> {
-            player.setScoreboard(manager.getMainScoreboard());
-        });
-
-        Scoreboard board = boards.remove(town);
-        board.getTeams().forEach(Team::unregister);
-    }
-
     public Team assignTeam(Resident resident, Town other) {
         Scoreboard board = boards.get(other);
         Town town = TownyUtils.getTown(resident);
         if (town != null) {
-            if (other.hasResident(resident)) {
+            if (other != null && other.hasResident(resident)) {
                 if (other.isMayor(resident)) {
                     return board.getTeam("town_mayors");
                 } else if (other.hasAssistant(resident)) {
@@ -92,23 +95,25 @@ public final class TownManager {
                     return board.getTeam("town_residents");
                 }
             } else {
-                Nation nation = TownyUtils.getNation(other);
-                if (nation != null && nation.hasTown(town)) {
-                    if (town.isMayor(resident)) {
-                        return board.getTeam("nation_mayors");
-                    } else if (town.hasAssistant(resident)) {
-                        return board.getTeam("nation_lords");
-                    } else {
-                        return board.getTeam("nation_residents");
+                if (other != null) {
+                    Nation nation = TownyUtils.getNation(other);
+                    if (nation != null && nation.hasTown(town)) {
+                        if (town.isMayor(resident)) {
+                            return board.getTeam("nation_mayors");
+                        } else if (town.hasAssistant(resident)) {
+                            return board.getTeam("nation_lords");
+                        } else {
+                            return board.getTeam("nation_residents");
+                        }
                     }
+                }
+
+                if (town.isMayor(resident)) {
+                    return board.getTeam("enemy_mayors");
+                } else if (town.hasAssistant(resident)) {
+                    return board.getTeam("enemy_lords");
                 } else {
-                    if (town.isMayor(resident)) {
-                        return board.getTeam("enemy_mayors");
-                    } else if (town.hasAssistant(resident)) {
-                        return board.getTeam("enemy_lords");
-                    } else {
-                        return board.getTeam("enemy_residents");
-                    }
+                    return board.getTeam("enemy_residents");
                 }
             }
         } else {
@@ -119,12 +124,42 @@ public final class TownManager {
     public class TownListener implements Listener {
         @EventHandler
         public void on(PlayerJoinEvent event) {
+            Player player = event.getPlayer();
+            Resident resident = TownyUtils.getResident(player);
+            Town town = TownyUtils.getTown(resident);
 
+            Scoreboard board = boards.get(town);
+
+            if (board == null) {
+                board = setupBoard(town);
+            }
+
+            player.setScoreboard(board);
+
+            updateBoard(resident);
         }
 
         @EventHandler
         public void on(PlayerQuitEvent event) {
+            Player player = event.getPlayer();
 
+            boards.forEach((town, board) -> {
+                board.getEntryTeam(player.getName()).removeEntry(player.getName());
+            });
+
+            player.setScoreboard(manager.getMainScoreboard());
+        }
+
+        @EventHandler
+        public void on(TownAddResidentEvent event) {
+            Resident resident = event.getResident();
+            updateBoard(resident);
+        }
+
+        @EventHandler
+        public void on(TownRemoveResidentEvent event) {
+            Resident resident = event.getResident();
+            updateBoard(resident);
         }
     }
 }
