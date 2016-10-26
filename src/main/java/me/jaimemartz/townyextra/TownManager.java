@@ -97,7 +97,8 @@ public final class TownManager {
             } else {
                 if (other != null) {
                     Nation nation = TownyUtils.getNation(other);
-                    if (nation != null && nation.hasTown(town)) {
+                    Nation otherNation = TownyUtils.getNation(town);
+                    if (nation != null && otherNation != null && nation.hasAlly(otherNation)) {
                         if (town.isMayor(resident)) {
                             return board.getTeam("nation_mayors");
                         } else if (town.hasAssistant(resident)) {
