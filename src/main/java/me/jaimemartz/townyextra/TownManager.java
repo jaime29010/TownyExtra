@@ -56,19 +56,16 @@ public final class TownManager {
         Team unknown = board.registerNewTeam("unknown");
         unknown.setPrefix(ChatColor.GRAY + ChatColor.ITALIC.toString());
 
+        //todo do this on join
         TownyUniverse.getOnlinePlayers(town).forEach(player -> player.setScoreboard(board));
         boards.put(town, board);
-
-        updateBoard();
     }
 
     public void updateBoard(Resident resident) {
-        boards.forEach((other, board) -> {
-            plugin.getServer().getOnlinePlayers().forEach(player -> {
-                Resident resident1 = TownyUtils.getResident(player);
-                Team team = assignTeam(resident1, other);
-                team.addEntry(player.getName());
-            });
+        boards.keySet().forEach(other -> {
+            //Update of player
+            Team team = assignTeam(resident, other);
+            team.addEntry(resident.getName());
         });
 
     }
