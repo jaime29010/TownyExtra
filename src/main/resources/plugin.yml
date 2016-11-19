@@ -3,3 +3,6 @@ version: ${project.version}
 main: me.jaimemartz.townyextra.TownyExtra
 depend: [Towny, ProtocolLib]
 authors: [MrJaime]
+commands:
+  bannertoggle:
+    description: 'Toggle your banner'

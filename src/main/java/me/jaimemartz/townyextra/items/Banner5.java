@@ -7,7 +7,7 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
 
-public final class Banner1 {
+public final class Banner5 {
     /**
      * This method has been generated using ItemStackCoder
      * More info at https://www.spigotmc.org/resources/itemstackcoder-item2java.13053/
@@ -16,11 +16,11 @@ public final class Banner1 {
         ItemStack item = new ItemStack(Material.BANNER);
         BannerMeta meta = (BannerMeta) item.getItemMeta();
         meta.setBaseColor(DyeColor.BLACK);
-        meta.addPattern(new Pattern(DyeColor.LIME, PatternType.CURLY_BORDER));
         meta.addPattern(new Pattern(DyeColor.LIME, PatternType.STRIPE_CENTER));
         meta.addPattern(new Pattern(DyeColor.BLACK, PatternType.STRIPE_BOTTOM));
-        meta.addPattern(new Pattern(DyeColor.YELLOW, PatternType.STRIPE_TOP));
+        meta.addPattern(new Pattern(DyeColor.BLACK, PatternType.STRIPE_TOP));
         meta.addPattern(new Pattern(DyeColor.LIME, PatternType.CREEPER));
+        meta.addPattern(new Pattern(DyeColor.LIME, PatternType.CURLY_BORDER));
         meta.addPattern(new Pattern(DyeColor.BLACK, PatternType.TRIANGLES_TOP));
         item.setItemMeta(meta);
         return item;

@@ -1,0 +1,20 @@
+# Mayor: 0-3
+# Assistants: 4-7
+banners:
+  'City1':
+    rey: 0
+    lord: 4
+  'City2':
+    rey: 1
+    lord: 5
+  'City3':
+    rey: 2
+    lord: 6
+  'City4':
+    rey: 3
+    lord: 7
+
+features:
+  block-spam: true
+  town-banner: true
+  town-colors: true
