@@ -47,6 +47,8 @@ public class TownBannerFeature implements Listener, CommandExecutor {
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         plugin.getCommand("bannertoggle").setExecutor(this);
+
+        plugin.getLogger().info("Initialized: " + getClass());
     }
 
     @Override
@@ -88,8 +90,14 @@ public class TownBannerFeature implements Listener, CommandExecutor {
     public void on(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
         ArmorStand stand = stands.get(player);
-        if (stand == null) return;
+        if (stand == null) {
+            Resident resident = TownyUtils.getResident(player);
+            Town town = TownyUtils.getTown(resident);
+            checkSetup(player, town);
+            stand = stands.get(player);
+        }
 
+        if (stand == null) return;
         updatePos(stand, event.getRespawnLocation());
         showStand(player, stand);
     }
@@ -123,6 +131,7 @@ public class TownBannerFeature implements Listener, CommandExecutor {
         if (stand == null) return;
 
         stand.setHelmet(new ItemStack(Material.AIR));
+        tryRemove(player);
     }
 
     @EventHandler

@@ -40,6 +40,7 @@ public class TownColorsFeature implements Listener {
             updateBoard(resident);
             player.setScoreboard(board);
         }), 0, 20 * 3);
+        plugin.getLogger().info("Initialized: " + getClass());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

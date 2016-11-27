@@ -29,6 +29,7 @@ public class BlockSpamFeature implements Listener {
     public BlockSpamFeature(TownyExtra plugin) {
         this.plugin = plugin;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        plugin.getLogger().info("Initialized: " + getClass());
     }
 
     @EventHandler
@@ -38,27 +39,29 @@ public class BlockSpamFeature implements Listener {
         Block block = event.getBlockPlaced();
         Chunk chunk = block.getChunk();
         Location location = block.getLocation();
-        TownBlock cell = TownyUniverse.getTownBlock(block.getLocation());
+        TownBlock cell = TownyUniverse.getTownBlock(location);
 
         if (player.isOp()) return;
-        if (cell != null && cell.getType() == TownBlockType.WILDS) {
-            if (location.getY() <= 90) {
-                if (block.getType() == Material.DIRT || block.getType() == Material.COBBLESTONE) {
-                    locs.add(location);
-                    plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-                        if (!chunk.isLoaded()) //Make sure the chunk is loaded
-                            chunk.load(true);
+        if (location.getWorld().equals(plugin.getServer().getWorld("world"))) {
+            if (cell == null || cell.getType() == TownBlockType.WILDS) {
+                if (location.getY() <= 90) {
+                    if (block.getType() == Material.DIRT || block.getType() == Material.COBBLESTONE) {
+                        locs.add(location);
+                        plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                            if (!chunk.isLoaded()) //Make sure the chunk is loaded
+                                chunk.load(true);
 
-                        block.setType(previous.getType());
-                        block.setData(previous.getRawData());
-                        locs.remove(location);
-                    }, 20 * 4);
+                            block.setType(previous.getType());
+                            block.setData(previous.getRawData());
+                            locs.remove(location);
+                        }, 20 * 4);
+                    } else {
+                        event.setCancelled(true);
+                    }
                 } else {
+                    player.sendMessage(ChatColor.RED + "Has superado el limite de la altura permitida");
                     event.setCancelled(true);
                 }
-            } else {
-                player.sendMessage(ChatColor.RED + "Has superado el limite de la altura permitida");
-                event.setCancelled(true);
             }
         }
     }
@@ -73,28 +76,31 @@ public class BlockSpamFeature implements Listener {
         TownBlock cell = TownyUniverse.getTownBlock(location);
 
         if (player.isOp()) return;
-        if (cell != null && cell.getType() == TownBlockType.WILDS) {
-            if (location.getY() <= 90) {
-                if (event.getBucket() == Material.WATER_BUCKET && (block.getType() != Material.WATER || block.getType() != Material.STATIONARY_WATER)) {
-                    locs.add(location);
-                    ItemStack item = event.getItemStack();
-                    item.setType(Material.WATER_BUCKET);
-                    block.setType(Material.AIR);
-                    event.setItemStack(item); //Move inside the delayed task?
-                    plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-                        if (!chunk.isLoaded()) //Make sure the chunk is loaded
-                            chunk.load(true);
+        if (location.getWorld().equals(plugin.getServer().getWorlds().get(0))) {
+            if (cell == null || cell.getType() == TownBlockType.WILDS) {
+                if (location.getY() <= 90) {
+                    if (event.getBucket() == Material.WATER_BUCKET && (block.getType() != Material.WATER || block.getType() != Material.STATIONARY_WATER)) {
+                        if (locs.contains(location)) return;
+                        locs.add(location);
+                        ItemStack item = event.getItemStack();
+                        item.setType(Material.WATER_BUCKET);
+                        block.setType(Material.AIR);
+                        event.setItemStack(item); //Move inside the delayed task?
+                        plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                            if (!chunk.isLoaded()) //Make sure the chunk is loaded
+                                chunk.load(true);
 
-                        block.setType(previous.getType());
-                        block.setData(previous.getRawData());
-                        locs.remove(location);
-                    }, 5);
+                            block.setType(previous.getType());
+                            block.setData(previous.getRawData());
+                            locs.remove(location);
+                        }, 5);
+                    } else {
+                        event.setCancelled(true);
+                    }
                 } else {
+                    player.sendMessage(ChatColor.RED + "Has superado el limite de la altura permitida");
                     event.setCancelled(true);
                 }
-            } else {
-                player.sendMessage(ChatColor.RED + "Has superado el limite de la altura permitida");
-                event.setCancelled(true);
             }
         }
     }
