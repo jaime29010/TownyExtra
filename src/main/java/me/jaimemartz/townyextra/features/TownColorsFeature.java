@@ -28,46 +28,49 @@ public class TownColorsFeature implements Listener {
         this.plugin = plugin;
         manager = plugin.getServer().getScoreboardManager();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, () -> plugin.getServer().getOnlinePlayers().forEach(player -> {
-            Resident resident = TownyUtils.getResident(player);
-            Town town = TownyUtils.getTown(resident);
+        plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            plugin.getServer().getOnlinePlayers().forEach(player -> {
+                Resident resident = TownyUtils.getResident(player);
+                Town town = TownyUtils.getTown(resident);
 
-            Scoreboard board = boards.get(town);
-            if (board == null) {
-                board = setupBoard(town);
-            }
+                Scoreboard board = boards.get(town);
+                if (board == null) {
+                    board = setupBoard(town);
+                }
 
-            updateBoard(resident);
-            player.setScoreboard(board);
-        }), 0, 20 * 3);
+                player.setScoreboard(board);
+                updateBoard(resident);
+            });
+        }, 0, 20 * plugin.getConfig().getInt("features.town-colors.update-interval"));
         plugin.getLogger().info("Initialized: " + getClass());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void on(PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        plugin.getServer().getScheduler().runTask(plugin, () -> {
-            Resident resident = TownyUtils.getResident(player);
-            Town town = TownyUtils.getTown(resident);
+        Resident resident = TownyUtils.getResident(player);
+        Town town = TownyUtils.getTown(resident);
 
-            Scoreboard board = boards.get(town);
-            if (board == null) {
-                board = this.setupBoard(town);
-            }
+        Scoreboard board = boards.get(town);
+        if (board == null) {
+            board = this.setupBoard(town);
+        }
 
-            player.setScoreboard(board);
-            updateBoard(resident);
-        });
+        player.setScoreboard(board);
+
+        updateBoard(resident);
     }
 
     @EventHandler
     public void on(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        boards.values().stream()
-                .map(board -> board.getEntryTeam(player.getName()))
-                .filter(object -> object != null)
-                .forEach(team -> team.removeEntry(player.getName()));
-        player.setScoreboard(manager.getMainScoreboard());
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            boards.values().stream()
+                    .map(board -> board.getEntryTeam(player.getName()))
+                    .filter(object -> object != null)
+                    .forEach(team -> team.removeEntry(player.getName()));
+            player.setScoreboard(manager.getMainScoreboard());
+        });
     }
 
     private Scoreboard setupBoard(Town town) {
@@ -92,20 +95,22 @@ public class TownColorsFeature implements Listener {
     }
 
     private void updateBoard(Resident resident) {
-        Town town = TownyUtils.getTown(resident);
-        boards.keySet().forEach(other -> {
-            if (town == other) {
-                plugin.getServer().getOnlinePlayers().stream()
-                        .map(TownyUtils::getResident)
-                        .filter(object -> object != null)
-                        .forEach(res -> {
-                            Team team = this.assignTeam(res, town);
-                            team.addEntry(res.getName());
-                        });
-            }
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            Town town = TownyUtils.getTown(resident);
+            boards.keySet().forEach(other -> {
+                if (town == other) {
+                    plugin.getServer().getOnlinePlayers().stream()
+                            .map(TownyUtils::getResident)
+                            .filter(object -> object != null)
+                            .forEach(res -> {
+                                Team team = this.assignTeam(res, town);
+                                team.addEntry(res.getName());
+                            });
+                }
 
-            Team team = assignTeam(resident, other);
-            team.addEntry(resident.getName());
+                Team team = assignTeam(resident, other);
+                team.addEntry(resident.getName());
+            });
         });
     }
 

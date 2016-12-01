@@ -12,13 +12,13 @@ public final class TownyExtra extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        if (getConfig().getBoolean("features.block-spam"))
+        if (getConfig().getBoolean("features.block-spam.enabled"))
             new BlockSpamFeature(this);
 
-        if (getConfig().getBoolean("features.town-banner"))
+        if (getConfig().getBoolean("features.town-banner.enabled"))
             new TownBannerFeature(this);
 
-        if (getConfig().getBoolean("features.town-colors"))
+        if (getConfig().getBoolean("features.town-colors.enabled"))
             new TownColorsFeature(this);
     }
 

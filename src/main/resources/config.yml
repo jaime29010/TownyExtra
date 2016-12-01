@@ -15,6 +15,10 @@ banners:
     lord: 7
 
 features:
-  block-spam: true
-  town-banner: true
-  town-colors: true
+  block-spam:
+    enabled: true
+  town-banner:
+    enabled: true
+  town-colors:
+    enabled: true
+    update-interval: 120
