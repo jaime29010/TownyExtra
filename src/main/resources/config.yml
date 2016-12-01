@@ -21,4 +21,3 @@ features:
     enabled: true
   town-colors:
     enabled: true
-    update-interval: 120

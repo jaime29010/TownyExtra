@@ -1,5 +1,7 @@
 package me.jaimemartz.townyextra.features;
 
+import com.palmergames.bukkit.towny.event.TownAddResidentEvent;
+import com.palmergames.bukkit.towny.event.TownRemoveResidentEvent;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
@@ -28,20 +30,26 @@ public class TownColorsFeature implements Listener {
         this.plugin = plugin;
         manager = plugin.getServer().getScoreboardManager();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
-            plugin.getServer().getOnlinePlayers().forEach(player -> {
-                Resident resident = TownyUtils.getResident(player);
-                Town town = TownyUtils.getTown(resident);
+        /*
+        int interval = plugin.getConfig().getInt("features.town-colors.update-interval");
+        if (interval > 0) {
+            plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+                plugin.getLogger().info("Executing global board update");
+                plugin.getServer().getOnlinePlayers().forEach(player -> {
+                    Resident resident = TownyUtils.getResident(player);
+                    Town town = TownyUtils.getTown(resident);
 
-                Scoreboard board = boards.get(town);
-                if (board == null) {
-                    board = setupBoard(town);
-                }
+                    Scoreboard board = boards.get(town);
+                    if (board == null) {
+                        board = setupBoard(town);
+                    }
 
-                player.setScoreboard(board);
-                updateBoard(resident);
-            });
-        }, 0, 20 * plugin.getConfig().getInt("features.town-colors.update-interval"));
+                    player.setScoreboard(board);
+                    updateBoard(resident);
+                });
+            }, 0, 20 * interval);
+        }
+        */
         plugin.getLogger().info("Initialized: " + getClass());
     }
 
@@ -49,16 +57,17 @@ public class TownColorsFeature implements Listener {
     public void on(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         Resident resident = TownyUtils.getResident(player);
-        Town town = TownyUtils.getTown(resident);
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            Town town = TownyUtils.getTown(resident);
 
-        Scoreboard board = boards.get(town);
-        if (board == null) {
-            board = this.setupBoard(town);
-        }
+            Scoreboard board = boards.get(town);
+            if (board == null) {
+                board = this.setupBoard(town);
+            }
 
-        player.setScoreboard(board);
-
-        updateBoard(resident);
+            player.setScoreboard(board);
+            updateBoard(resident);
+        });
     }
 
     @EventHandler
@@ -71,6 +80,16 @@ public class TownColorsFeature implements Listener {
                     .forEach(team -> team.removeEntry(player.getName()));
             player.setScoreboard(manager.getMainScoreboard());
         });
+    }
+
+    @EventHandler
+    public void on(TownAddResidentEvent event) {
+        plugin.getServer().getScheduler().runTask(plugin, () -> updateBoard(event.getResident(), event.getTown()));
+    }
+
+    @EventHandler
+    public void on(TownRemoveResidentEvent event) {
+        plugin.getServer().getScheduler().runTask(plugin, () -> updateBoard(event.getResident(), null));
     }
 
     private Scoreboard setupBoard(Town town) {
@@ -95,8 +114,12 @@ public class TownColorsFeature implements Listener {
     }
 
     private void updateBoard(Resident resident) {
+        Town town = TownyUtils.getTown(resident);
+        updateBoard(resident, town);
+    }
+
+    private void updateBoard(Resident resident, Town town) {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            Town town = TownyUtils.getTown(resident);
             boards.keySet().forEach(other -> {
                 if (town == other) {
                     plugin.getServer().getOnlinePlayers().stream()
