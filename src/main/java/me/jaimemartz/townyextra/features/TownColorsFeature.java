@@ -30,26 +30,6 @@ public class TownColorsFeature implements Listener {
         this.plugin = plugin;
         manager = plugin.getServer().getScoreboardManager();
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        /*
-        int interval = plugin.getConfig().getInt("features.town-colors.update-interval");
-        if (interval > 0) {
-            plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
-                plugin.getLogger().info("Executing global board update");
-                plugin.getServer().getOnlinePlayers().forEach(player -> {
-                    Resident resident = TownyUtils.getResident(player);
-                    Town town = TownyUtils.getTown(resident);
-
-                    Scoreboard board = boards.get(town);
-                    if (board == null) {
-                        board = setupBoard(town);
-                    }
-
-                    player.setScoreboard(board);
-                    updateBoard(resident);
-                });
-            }, 0, 20 * interval);
-        }
-        */
         plugin.getLogger().info("Initialized: " + getClass());
     }
 
