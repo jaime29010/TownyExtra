@@ -64,7 +64,7 @@ public class TownColorsFeature implements Listener {
 
     @EventHandler
     public void on(TownAddResidentEvent event) {
-        plugin.getServer().getScheduler().runTask(plugin, () -> updateBoard(event.getResident(), event.getTown()));
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> updateBoard(event.getResident(), event.getTown()), 20 * 5);
     }
 
     @EventHandler
@@ -102,13 +102,10 @@ public class TownColorsFeature implements Listener {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             boards.keySet().forEach(other -> {
                 if (town == other) {
-                    plugin.getServer().getOnlinePlayers().stream()
-                            .map(TownyUtils::getResident)
-                            .filter(object -> object != null)
-                            .forEach(res -> {
-                                Team team = this.assignTeam(res, town);
-                                team.addEntry(res.getName());
-                            });
+                    plugin.getServer().getOnlinePlayers().stream().map(TownyUtils::getResident).filter(object -> object != null).forEach(res -> {
+                        Team team = this.assignTeam(res, town);
+                        team.addEntry(res.getName());
+                    });
                 }
 
                 Team team = assignTeam(resident, other);
@@ -117,6 +114,9 @@ public class TownColorsFeature implements Listener {
         });
     }
 
+    /**
+     * The team that should be chosen to a resident in a town
+     */
     private Team assignTeam(Resident resident, Town other) {
         Scoreboard board = boards.get(other);
         Town town = TownyUtils.getTown(resident);
