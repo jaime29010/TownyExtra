@@ -35,7 +35,6 @@ public class TownColorsFeature implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void on(PlayerJoinEvent event) {
-        //UPDATE BOARD ONLY TO PLAYER INITIALY
         Player player = event.getPlayer();
         Resident resident = TownyUtils.getResident(player);
         plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
@@ -98,13 +97,6 @@ public class TownColorsFeature implements Listener {
         return board;
     }
 
-    /**
-     * @param player the resident
-     * @param town his town (may not actually be reside in it)
-     */
-
-
-    //UPDATES ALL BOARDS UPDATING THE INFO OF 'resident'
     private void updateBoard(Player player, Town town) {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             boards.forEach((other, board) -> {
@@ -114,15 +106,8 @@ public class TownColorsFeature implements Listener {
         });
     }
 
-    /**
-     *
-     * @param player the player
-     * @param town the town of the player
-     * @param other town to compare with
-     * @return team to be assigned within the board of the other town
-     */
     private Team assignTeam(Player player, Town town, Town other) {
-        Scoreboard board = boards.get(other); //SETUP BOARD INSTEAD OF GETTING
+        Scoreboard board = boards.get(other);
         Resident resident = TownyUtils.getResident(player);
         if (town != null) {
             if (town.equals(other)) {
