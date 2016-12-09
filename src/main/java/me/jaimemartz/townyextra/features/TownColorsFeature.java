@@ -2,7 +2,6 @@ package me.jaimemartz.townyextra.features;
 
 import com.palmergames.bukkit.towny.event.TownAddResidentEvent;
 import com.palmergames.bukkit.towny.event.TownRemoveResidentEvent;
-import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Resident;
 import com.palmergames.bukkit.towny.object.Town;
 import me.jaimemartz.townyextra.TownyExtra;
@@ -14,6 +13,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
@@ -35,6 +35,7 @@ public class TownColorsFeature implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void on(PlayerJoinEvent event) {
+        //UPDATE BOARD ONLY TO PLAYER INITIALY
         Player player = event.getPlayer();
         Resident resident = TownyUtils.getResident(player);
         plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
@@ -46,7 +47,7 @@ public class TownColorsFeature implements Listener {
             }
 
             player.setScoreboard(board);
-            updateBoard(resident);
+            updateBoard(player, town);
         }, 20 * 2);
     }
 
@@ -54,101 +55,99 @@ public class TownColorsFeature implements Listener {
     public void on(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            boards.values().stream().map(board -> board.getEntryTeam(player.getName())).filter(object -> object != null).forEach(team -> team.removeEntry(player.getName()));
+            boards.values().stream().map(board -> board.getEntryTeam(player.getName())).filter(t -> t != null).forEach(team -> team.removeEntry(player.getName()));
             player.setScoreboard(manager.getMainScoreboard());
         });
     }
 
     @EventHandler
     public void on(TownAddResidentEvent event) {
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> updateBoard(event.getResident(), event.getTown()), 20 * 5);
+        Player player = TownyUtils.getPlayer(event.getResident());
+        if (player != null) {
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    updateBoard(player, event.getTown());
+                }
+            }.runTaskLater(plugin, 20 * 5);
+        }
     }
 
     @EventHandler
     public void on(TownRemoveResidentEvent event) {
-        plugin.getServer().getScheduler().runTask(plugin, () -> updateBoard(event.getResident(), null));
+        Player player = TownyUtils.getPlayer(event.getResident());
+        if (player == null) return;
+
+        plugin.getServer().getScheduler().runTask(plugin, () -> updateBoard(player, null));
     }
 
     private Scoreboard setupBoard(Town town) {
         Scoreboard board = manager.getNewScoreboard();
 
-        board.registerNewTeam("town_mayors").setPrefix("[" + ChatColor.RED + "Rey" + ChatColor.WHITE + "]" + " " + ChatColor.GREEN);
-        board.registerNewTeam("town_lords").setPrefix("[" + ChatColor.BLUE + "Lord" + ChatColor.WHITE + "]" + " " + ChatColor.GREEN);
-        board.registerNewTeam("town_vips").setPrefix("[" + ChatColor.GREEN + "VIP" + ChatColor.WHITE + "]" + " " + ChatColor.GREEN);
-        board.registerNewTeam("town_residents").setPrefix(ChatColor.GREEN.toString());
+        board.registerNewTeam("mayor_ally").setPrefix("[" + ChatColor.RED + "Rey" + ChatColor.WHITE + "]" + " " + ChatColor.GREEN);
+        board.registerNewTeam("assist_ally").setPrefix("[" + ChatColor.BLUE + "Lord" + ChatColor.WHITE + "]" + " " + ChatColor.GREEN);
+        board.registerNewTeam("vip_ally").setPrefix("[" + ChatColor.GREEN + "VIP" + ChatColor.WHITE + "]" + " " + ChatColor.GREEN);
+        board.registerNewTeam("normal_ally").setPrefix(ChatColor.GREEN.toString());
 
-        board.registerNewTeam("enemy_mayors").setPrefix("[" + ChatColor.RED + "Rey" + ChatColor.WHITE + "]" + " " + ChatColor.RED);
-        board.registerNewTeam("enemy_lords").setPrefix("[" + ChatColor.BLUE + "Lord" + ChatColor.WHITE + "]" + " " + ChatColor.RED);
-        board.registerNewTeam("enemy_vips").setPrefix("[" + ChatColor.GREEN + "VIP" + ChatColor.WHITE + "]" + " " + ChatColor.RED);
-        board.registerNewTeam("enemy_residents").setPrefix(ChatColor.RED.toString());
-
-        board.registerNewTeam("unknown").setPrefix(ChatColor.RED.toString());
+        board.registerNewTeam("mayor_enemy").setPrefix("[" + ChatColor.RED + "Rey" + ChatColor.WHITE + "]" + " " + ChatColor.RED);
+        board.registerNewTeam("assist_enemy").setPrefix("[" + ChatColor.BLUE + "Lord" + ChatColor.WHITE + "]" + " " + ChatColor.RED);
+        board.registerNewTeam("vip_enemy").setPrefix("[" + ChatColor.GREEN + "VIP" + ChatColor.WHITE + "]" + " " + ChatColor.RED);
+        board.registerNewTeam("normal_enemy").setPrefix(ChatColor.RED.toString());
 
         boards.put(town, board);
         return board;
     }
 
-    private void updateBoard(Resident resident) {
-        Town town = TownyUtils.getTown(resident);
-        updateBoard(resident, town);
-    }
+    /**
+     * @param player the resident
+     * @param town his town (may not actually be reside in it)
+     */
 
-    private void updateBoard(Resident resident, Town town) {
+
+    //UPDATES ALL BOARDS UPDATING THE INFO OF 'resident'
+    private void updateBoard(Player player, Town town) {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            boards.keySet().forEach(other -> {
-                if (town == other) {
-                    plugin.getServer().getOnlinePlayers().stream().map(TownyUtils::getResident).filter(object -> object != null).forEach(res -> {
-                        Team team = this.assignTeam(res, town);
-                        team.addEntry(res.getName());
-                    });
-                }
-
-                Team team = assignTeam(resident, other);
-                team.addEntry(resident.getName());
+            boards.forEach((other, board) -> {
+                Team team = assignTeam(player, town, other);
+                team.addEntry(player.getName());
             });
         });
     }
 
     /**
-     * The team that should be chosen to a resident in a town
+     *
+     * @param player the player
+     * @param town the town of the player
+     * @param other town to compare with
+     * @return team to be assigned within the board of the other town
      */
-    private Team assignTeam(Resident resident, Town other) {
-        Scoreboard board = boards.get(other);
-        Town town = TownyUtils.getTown(resident);
+    private Team assignTeam(Player player, Town town, Town other) {
+        Scoreboard board = boards.get(other); //SETUP BOARD INSTEAD OF GETTING
+        Resident resident = TownyUtils.getResident(player);
         if (town != null) {
-            if (other != null && other.hasResident(resident)) {
-                if (other.isMayor(resident)) {
-                    return board.getTeam("town_mayors");
-                } else if (other.hasAssistant(resident)) {
-                    return board.getTeam("town_lords");
+            if (town.equals(other)) {
+                if (town.isMayor(resident)) {
+                    return board.getTeam("mayor_ally");
+                } else if (town.hasAssistant(resident)) {
+                    return board.getTeam("assist_ally");
+                } else if (player.hasPermission("townyextra.vip")) {
+                    return board.getTeam("vip_ally");
                 } else {
-                    return board.getTeam("town_residents");
+                    return board.getTeam("normal_ally");
                 }
             } else {
-                if (other != null) {
-                    Nation nation = TownyUtils.getNation(other);
-                    Nation otherNation = TownyUtils.getNation(town);
-                    if (nation != null && otherNation != null && nation.hasAlly(otherNation)) {
-                        if (town.isMayor(resident)) {
-                            return board.getTeam("nation_mayors");
-                        } else if (town.hasAssistant(resident)) {
-                            return board.getTeam("nation_lords");
-                        } else {
-                            return board.getTeam("nation_residents");
-                        }
-                    }
-                }
-
                 if (town.isMayor(resident)) {
-                    return board.getTeam("enemy_mayors");
+                    return board.getTeam("mayor_enemy");
                 } else if (town.hasAssistant(resident)) {
-                    return board.getTeam("enemy_lords");
+                    return board.getTeam("assist_enemy");
+                } else if (player.hasPermission("townyextra.vip")) {
+                    return board.getTeam("vip_enemy");
                 } else {
-                    return board.getTeam("enemy_residents");
+                    return board.getTeam("normal_enemy");
                 }
             }
         } else {
-            return board.getTeam("unknown");
+            return board.getTeam("normal_enemy");
         }
     }
 }

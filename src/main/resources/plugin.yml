@@ -4,5 +4,5 @@ main: me.jaimemartz.townyextra.TownyExtra
 depend: [Towny, ProtocolLib]
 authors: [MrJaime]
 commands:
-  bannertoggle:
+  bandera:
     description: 'Toggle your banner'

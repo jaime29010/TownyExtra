@@ -4,15 +4,19 @@ banners:
   'City1':
     rey: 0
     lord: 4
+    vip: 8
   'City2':
     rey: 1
     lord: 5
+    vip: 9
   'City3':
     rey: 2
     lord: 6
+    vip: 10
   'City4':
     rey: 3
     lord: 7
+    vip: 11
 
 features:
   block-spam:

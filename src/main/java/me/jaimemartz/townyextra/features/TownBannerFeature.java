@@ -28,41 +28,45 @@ import java.util.*;
 
 public class TownBannerFeature implements Listener, CommandExecutor {
     private final Map<Player, ArmorStand> stands = new HashMap<>();
-    private final Map<Player, Boolean> status = new HashMap<>();
     private final List<ItemStack> banners = new ArrayList<>();
     private final TownyExtra plugin;
 
     public TownBannerFeature(TownyExtra plugin) {
         this.plugin = plugin;
 
-        banners.add(Banner1.getItemStack());
-        banners.add(Banner2.getItemStack());
-        banners.add(Banner3.getItemStack());
-        banners.add(Banner4.getItemStack());
+        banners.add(0, Banner1.getItemStack());
+        banners.add(1, Banner2.getItemStack());
+        banners.add(2, Banner3.getItemStack());
+        banners.add(3, Banner4.getItemStack());
 
-        banners.add(Banner5.getItemStack());
-        banners.add(Banner6.getItemStack());
-        banners.add(Banner7.getItemStack());
-        banners.add(Banner8.getItemStack());
+        banners.add(4, Banner5.getItemStack());
+        banners.add(5, Banner6.getItemStack());
+        banners.add(6, Banner7.getItemStack());
+        banners.add(7, Banner8.getItemStack());
+
+        banners.add(8, Banner9.getItemStack());
+        banners.add(9, Banner10.getItemStack());
+        banners.add(10, Banner11.getItemStack());
+        banners.add(11, Banner12.getItemStack());
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        plugin.getCommand("bannertoggle").setExecutor(this);
+        plugin.getCommand("bandera").setExecutor(this);
 
         plugin.getLogger().info("Initialized: " + getClass());
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (sender instanceof Player) {
             Player player = (Player) sender;
             ArmorStand stand = stands.get(player);
             if (stand != null) {
-                if (status.get(player)) {
-                    status.put(player, false);
+                if (plugin.getDataPool().getToggleStatus().get(player.getUniqueId())) {
+                    plugin.getDataPool().getToggleStatus().put(player.getUniqueId(), false);
                     stand.setHelmet(new ItemStack(Material.AIR));
                     player.sendMessage(ChatColor.GREEN + "Has deshabilitado la bandera que tenias asignada");
                 } else {
-                    status.put(player, true);
+                    plugin.getDataPool().getToggleStatus().put(player.getUniqueId(), true);
                     showStand(player, stand);
                     player.sendMessage(ChatColor.GREEN + "Has habilitado la bandera que tenias asignada");
                 }
@@ -212,17 +216,14 @@ public class TownBannerFeature implements Listener, CommandExecutor {
         if (town == null) return;
 
         Resident resident = TownyUtils.getResident(player);
-        if (town.isMayor(resident) || town.hasAssistant(resident)) {
+        if (town.isMayor(resident) || town.hasAssistant(resident) || player.hasPermission("townyextra.vip")) {
             setupStand(player);
         }
     }
 
     private void showStand(Player player, ArmorStand stand) {
-        if (status.get(player) && player.getGameMode() != GameMode.SPECTATOR) {
-            Resident resident = TownyUtils.getResident(player);
-            if (resident == null) return;
-
-            ItemStack item = getBanner(resident);
+        if (plugin.getDataPool().getToggleStatus().get(player.getUniqueId()) && player.getGameMode() != GameMode.SPECTATOR) {
+            ItemStack item = getBanner(player);
             if (item == null) return;
 
             stand.setHelmet(item);
@@ -234,6 +235,10 @@ public class TownBannerFeature implements Listener, CommandExecutor {
 
         ArmorStand stand = stands.remove(player);
         if (stand != null) {
+            Chunk chunk = stand.getLocation().getChunk();
+            if (!chunk.isLoaded())
+                chunk.load();
+
             stand.getLocation().getChunk().load();
             stand.remove();
         }
@@ -250,13 +255,17 @@ public class TownBannerFeature implements Listener, CommandExecutor {
         stand.setMarker(true);
 
         stands.put(player, stand);
-        status.put(player, true);
+
+        plugin.getDataPool().getToggleStatus().put(player.getUniqueId(), true);
         showStand(player, stand);
 
         plugin.getServer().getScheduler().runTask(plugin, () -> updatePos(stand, location));
     }
 
-    private ItemStack getBanner(Resident resident) {
+    private ItemStack getBanner(Player player) {
+        Resident resident = TownyUtils.getResident(player);
+        if (resident == null) return null;
+
         Town town = TownyUtils.getTown(resident);
         if (town == null) return null;
 
@@ -265,6 +274,8 @@ public class TownBannerFeature implements Listener, CommandExecutor {
             path += "rey";
         } else if (town.hasAssistant(resident)) {
             path += "lord";
+        } else if (player.hasPermission("townyextra.vip")) {
+            path += "vip";
         }
 
         if (!path.endsWith(".") && plugin.getConfig().isInt(path)) {
