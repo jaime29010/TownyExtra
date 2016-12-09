@@ -37,7 +37,7 @@ public class TownColorsFeature implements Listener {
     public void on(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         Resident resident = TownyUtils.getResident(player);
-        plugin.getServer().getScheduler().runTask(plugin, () -> {
+        plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
             Town town = TownyUtils.getTown(resident);
 
             Scoreboard board = boards.get(town);
@@ -47,17 +47,14 @@ public class TownColorsFeature implements Listener {
 
             player.setScoreboard(board);
             updateBoard(resident);
-        });
+        }, 20 * 2);
     }
 
     @EventHandler
     public void on(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            boards.values().stream()
-                    .map(board -> board.getEntryTeam(player.getName()))
-                    .filter(object -> object != null)
-                    .forEach(team -> team.removeEntry(player.getName()));
+            boards.values().stream().map(board -> board.getEntryTeam(player.getName())).filter(object -> object != null).forEach(team -> team.removeEntry(player.getName()));
             player.setScoreboard(manager.getMainScoreboard());
         });
     }
@@ -75,16 +72,14 @@ public class TownColorsFeature implements Listener {
     private Scoreboard setupBoard(Town town) {
         Scoreboard board = manager.getNewScoreboard();
 
-        board.registerNewTeam("nation_mayors").setPrefix("[" + ChatColor.RED + "Rey" + ChatColor.WHITE + "]" + " " + ChatColor.DARK_GREEN);
-        board.registerNewTeam("nation_lords").setPrefix("[" + ChatColor.BLUE + "Lord" + ChatColor.WHITE + "]" + " " + ChatColor.DARK_GREEN);
-        board.registerNewTeam("nation_residents").setPrefix(ChatColor.DARK_GREEN.toString());
-
         board.registerNewTeam("town_mayors").setPrefix("[" + ChatColor.RED + "Rey" + ChatColor.WHITE + "]" + " " + ChatColor.GREEN);
         board.registerNewTeam("town_lords").setPrefix("[" + ChatColor.BLUE + "Lord" + ChatColor.WHITE + "]" + " " + ChatColor.GREEN);
+        board.registerNewTeam("town_vips").setPrefix("[" + ChatColor.GREEN + "VIP" + ChatColor.WHITE + "]" + " " + ChatColor.GREEN);
         board.registerNewTeam("town_residents").setPrefix(ChatColor.GREEN.toString());
 
         board.registerNewTeam("enemy_mayors").setPrefix("[" + ChatColor.RED + "Rey" + ChatColor.WHITE + "]" + " " + ChatColor.RED);
         board.registerNewTeam("enemy_lords").setPrefix("[" + ChatColor.BLUE + "Lord" + ChatColor.WHITE + "]" + " " + ChatColor.RED);
+        board.registerNewTeam("enemy_vips").setPrefix("[" + ChatColor.GREEN + "VIP" + ChatColor.WHITE + "]" + " " + ChatColor.RED);
         board.registerNewTeam("enemy_residents").setPrefix(ChatColor.RED.toString());
 
         board.registerNewTeam("unknown").setPrefix(ChatColor.RED.toString());
