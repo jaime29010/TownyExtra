@@ -54,7 +54,8 @@ public class TownColorsFeature implements Listener {
     public void on(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            boards.values().stream().map(board -> board.getEntryTeam(player.getName())).filter(t -> t != null).forEach(team -> team.removeEntry(player.getName()));
+            boards.values().stream().map(board -> board.getEntryTeam(player.getName())
+            ).filter(t -> t != null).forEach(team -> team.removeEntry(player.getName()));
             player.setScoreboard(manager.getMainScoreboard());
         });
     }
@@ -77,7 +78,9 @@ public class TownColorsFeature implements Listener {
         Player player = TownyUtils.getPlayer(event.getResident());
         if (player == null) return;
 
-        plugin.getServer().getScheduler().runTask(plugin, () -> updateBoard(player, null));
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            updateBoard(player, null);
+        });
     }
 
     private Scoreboard setupBoard(Town town) {

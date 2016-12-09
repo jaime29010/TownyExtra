@@ -185,6 +185,7 @@ public class TownBannerFeature implements Listener, CommandExecutor {
     public void on(PluginDisableEvent event) {
         if (event.getPlugin().getClass().equals(TownyExtra.class)) {
             Iterator<Map.Entry<Player, ArmorStand>> iterator = stands.entrySet().iterator();
+
             while (iterator.hasNext()) {
                 Map.Entry<Player, ArmorStand> entry = iterator.next();
                 ArmorStand stand = entry.getValue();
