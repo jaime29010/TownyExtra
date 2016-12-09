@@ -46,6 +46,11 @@ public class BlockSpamFeature implements Listener {
             if (cell == null || cell.getType() == TownBlockType.WILDS) {
                 if (location.getY() <= 90) {
                     if (block.getType() == Material.DIRT || block.getType() == Material.COBBLESTONE) {
+                        if (locs.contains(location)) {
+                            event.setCancelled(true);
+                            return;
+                        }
+
                         locs.add(location);
                         plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
                             if (!chunk.isLoaded()) //Make sure the chunk is loaded
@@ -80,7 +85,11 @@ public class BlockSpamFeature implements Listener {
             if (cell == null || cell.getType() == TownBlockType.WILDS) {
                 if (location.getY() <= 90) {
                     if (event.getBucket() == Material.WATER_BUCKET && (block.getType() != Material.WATER || block.getType() != Material.STATIONARY_WATER)) {
-                        if (locs.contains(location)) return;
+                        if (locs.contains(location)) {
+                            event.setCancelled(true);
+                            return;
+                        }
+
                         locs.add(location);
                         ItemStack item = event.getItemStack();
                         item.setType(Material.WATER_BUCKET);
